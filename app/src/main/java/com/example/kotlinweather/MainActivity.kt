@@ -10,7 +10,6 @@ import android.location.LocationManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.view.Menu
@@ -24,6 +23,11 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import com.example.kotlinweather.Constants.getCelcius
+import com.example.kotlinweather.Constants.getLocationParams
+import com.example.kotlinweather.Constants.getTime
+import com.example.kotlinweather.Constants.getToast
 import com.example.kotlinweather.databinding.ActivityMainBinding
 import com.example.kotlinweather.models.WeatherResponse
 import com.example.kotlinweather.viewmodel.WeatherViewModel
@@ -34,9 +38,13 @@ import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener
+import kotlinx.coroutines.launch
 import retrofit2.*
+import java.math.RoundingMode
+import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
 
@@ -62,7 +70,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         getBindings()
-        setupUI(null,true)
+//        setupUI(null,true)
         if (!isLocEnabled()) {
             Toast.makeText(this, "Location Service turned off", Toast.LENGTH_SHORT).show()
             val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
@@ -124,29 +132,48 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("MissingPermission")
     private fun requestLocationData() {
-        val mLocationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 50000)
-            .build()
-        mFusedLocationProviderClient.requestLocationUpdates(
-            mLocationRequest,
-            mLocationCallback,
-            Looper.myLooper()
-        )
+//        val mLocationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 50000)
+//            .build()
+//        mFusedLocationProviderClient.requestLocationUpdates(
+//            mLocationRequest,
+//            mLocationCallback,
+//            Looper.myLooper()
+//        )
+
+        //
+        lifecycleScope.launch {
+            getLocationParams(mFusedLocationProviderClient).collect{
+                Log.i("Nads lats = ", "${it.latitude} &&& ${it.longitude}")
+                getWeatherData(it.latitude, it.longitude)
+            }
+        }
+
     }
 
-    val mLocationCallback = object : LocationCallback() {
-        override fun onLocationResult(locationResult: LocationResult) {
-            super.onLocationResult(locationResult)
-            val mLocation: Location? = locationResult.lastLocation
-            Log.i("Nads lats = ", "${mLocation!!.latitude} &&& ${mLocation.longitude}")
-            getWeatherData(mLocation.latitude, mLocation.longitude)
-        }
-    }
+//    val mLocationCallback = object : LocationCallback() {
+//        override fun onLocationResult(locationResult: LocationResult) {
+//            super.onLocationResult(locationResult)
+//            val mLocation: Location? = locationResult.lastLocation
+//            Log.i("Nads lats = ", "${mLocation!!.latitude} &&& ${mLocation.longitude}")
+//            getWeatherData(mLocation.latitude, mLocation.longitude)
+//        }
+//    }
 
     private fun getWeatherData(latitude: Double, longitude: Double) {
         if (Constants.isNetworkAvailable(this)) {
-            Constants.getToast(this, "Network connected")
+            getToast( "Network connected")
+            Log.e("nads net refresh","again called")
+//          for ViewModel and RxJava
+//            viewModel.getWeatherData(latitude,longitude,Constants.METRIC_UNIT,Constants.APP_ID)
 
-            viewModel.getWeatherData(latitude,longitude,Constants.METRIC_UNIT,Constants.APP_ID)
+
+            //for coroutines
+//            viewModel.getWeatherDataFromCoroutine(latitude,longitude,Constants.METRIC_UNIT,Constants.APP_ID)
+
+//for FLows
+            viewModel.getWeatherFlow(latitude,longitude,Constants.METRIC_UNIT,Constants.APP_ID)
+
+            //for retrofit
 //            val retrofit = Retrofit.Builder()
 //                .baseUrl(Constants.BASE_URL)
 //                .addConverterFactory(GsonConverterFactory.create()).build()
@@ -185,7 +212,7 @@ class MainActivity : AppCompatActivity() {
 //                }
 //            })
         } else {
-            Constants.getToast(this, "Network Disconnected")
+            getToast( "Network Disconnected")
         }
     }
 
@@ -197,7 +224,7 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_refresh -> {
-                Constants.getToast(this, "Refreshing Data")
+                getToast("Refreshing Data")
                 requestLocationData()
                 true
             }
@@ -267,22 +294,11 @@ class MainActivity : AppCompatActivity() {
         tv_name.text = weatherResponse.name.toString()
         tv_humid.text = weatherResponse.main!!.humidity.toString() + "%"
         tv_country.text = weatherResponse.sys!!.country.toString()
-        tv_sunrise.text = weatherResponse.sys!!.sunrise?.let { getTime(it).toString() }
+        tv_sunrise.text = weatherResponse.sys!!.sunrise?.let { Constants.getTime(it).toString() }
         tv_sunset.text = weatherResponse.sys!!.sunset?.let { getTime(it).toString() }
     }
 
-    private fun getTime(timex: Long): String? {
-        val date = Date(timex * 1000L)
-        val sdf = SimpleDateFormat("hh:mm", Locale.ENGLISH).apply {
-            timeZone = TimeZone.getDefault()
-        }
-        return sdf.format(date)
-    }
 
-    private fun getCelcius(value: Double): String {
-        val doubleValue = String.format("%2f", (value - 32) * 5 / 9).toDouble()
-        return "$doubleValue °C"
-    }
 
     private fun showPermissionRationale() {
         AlertDialog.Builder(this)
