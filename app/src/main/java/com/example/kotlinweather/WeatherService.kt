@@ -11,6 +11,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Call
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
@@ -39,9 +40,22 @@ class WeatherService {
     }
 
     fun getData(lat: Double, long: Double,units: String, appId: String): Call<WeatherResponse>{
-//        return withContext(Dispatchers.IO){
            return api.getWeather(lat,long,units,appId)
-//        }
+    }
+    suspend fun getDataForCoroutine(lat: Double, long: Double,units: String, appId: String): NetworkResult<WeatherResponse?>{
+        val result = api.getWeatherForCoroutine(lat,long,units,appId)
+        if(result.isSuccessful){
+            val responseBody = result.body()
+            if(responseBody != null){
+                return NetworkResult.Success(responseBody)
+            }
+            else{
+                return NetworkResult.Error("Error")
+            }
+        }
+        else{
+            return NetworkResult.Error("Error")
+        }
     }
 
     fun getDataSingle(lat: Double, long: Double,units: String, appId: String): Single<WeatherResponse>{

@@ -31,6 +31,7 @@ import com.example.kotlinweather.Constants.getToast
 import com.example.kotlinweather.databinding.ActivityMainBinding
 import com.example.kotlinweather.models.WeatherResponse
 import com.example.kotlinweather.viewmodel.WeatherViewModel
+import com.example.kotlinweather.viewmodel.WeatherViewModelFactory
 import com.google.android.gms.location.*
 import com.google.gson.Gson
 import com.karumi.dexter.Dexter
@@ -125,7 +126,8 @@ class MainActivity : AppCompatActivity() {
         iv_main = binding.ivMain
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         mSharedPreferences = getSharedPreferences(Constants.WEATHER_APP_PREFS, MODE_PRIVATE)
-        viewModel = ViewModelProvider(this).get(WeatherViewModel::class.java)
+        val service = (application as WeatherApplication).weatherService
+        viewModel = ViewModelProvider(this,WeatherViewModelFactory(service)).get(WeatherViewModel::class.java)
         viewModel.fusedClient(mFusedLocationProviderClient)
         observeViewModel()
     }
@@ -167,13 +169,15 @@ class MainActivity : AppCompatActivity() {
 //            viewModel.getWeatherData(latitude,longitude,Constants.METRIC_UNIT,Constants.APP_ID)
 
 
-            //for coroutines
-//            viewModel.getWeatherDataFromCoroutine(latitude,longitude,Constants.METRIC_UNIT,Constants.APP_ID)
+//for coroutines
+            viewModel.getWeatherDataFromCoroutineTest(latitude,longitude,Constants.METRIC_UNIT,Constants.APP_ID)
 
 //for FLows
-            viewModel.getWeatherFlow(latitude,longitude,Constants.METRIC_UNIT,Constants.APP_ID)
+//            viewModel.getWeatherFlow(latitude,longitude,Constants.METRIC_UNIT,Constants.APP_ID)
 
-            //for retrofit
+
+
+//for retrofit
 //            val retrofit = Retrofit.Builder()
 //                .baseUrl(Constants.BASE_URL)
 //                .addConverterFactory(GsonConverterFactory.create()).build()
@@ -239,6 +243,15 @@ class MainActivity : AppCompatActivity() {
             }
 
         })
+
+        viewModel.weatherDataNetworkResult.observe(this,androidx.lifecycle.Observer{weatherResponseNetwork ->
+
+            if(weatherResponseNetwork is NetworkResult.Success ){
+                setupUI(weatherResponseNetwork.data,false)
+            }
+
+        })
+
 
         viewModel.weatherDataError.observe(this, androidx.lifecycle.Observer { error ->
             error?.let{

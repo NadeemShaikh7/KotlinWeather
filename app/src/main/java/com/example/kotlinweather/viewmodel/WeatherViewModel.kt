@@ -1,10 +1,12 @@
 package com.example.kotlinweather.viewmodel
 
 import android.util.Log
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kotlinweather.Constants
+import com.example.kotlinweather.NetworkResult
 import com.example.kotlinweather.WeatherService
 import com.example.kotlinweather.models.WeatherResponse
 import com.google.android.gms.location.*
@@ -20,19 +22,23 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class WeatherViewModel: ViewModel() {
+class WeatherViewModel(private val weatherService: WeatherService) : ViewModel() {
     lateinit var mFusedLocationProviderClient: FusedLocationProviderClient
     val weatherData = MutableLiveData<WeatherResponse>()
+    val weatherDataNetworkResult = MutableLiveData<NetworkResult<WeatherResponse?>>()
+    val liveweather: LiveData<NetworkResult<WeatherResponse?>>
+        get() = weatherDataNetworkResult
+
     val weatherDataError = MutableLiveData<Boolean>()
     val loading = MutableLiveData<Boolean>()
     private val disposable = CompositeDisposable()
-    private lateinit var weatherService: WeatherService
+//    private lateinit var weatherService: WeatherService
 
     fun fusedClient(value: FusedLocationProviderClient){
         mFusedLocationProviderClient = value
     }
     init {
-        weatherService = WeatherService()
+//        this.weatherService = WeatherService()
     }
 
     fun getWeatherData(latitude: Double, longitude: Double, metricUnit: String, appId: String) {
@@ -78,6 +84,19 @@ class WeatherViewModel: ViewModel() {
         }
     }
 
+    fun getWeatherDataFromCoroutineTest(latitude: Double, longitude: Double, metricUnit: String, appId: String) {
+
+        loading.value = true
+        viewModelScope.launch(Dispatchers.IO) {
+            val getCall = weatherService.getDataForCoroutine(
+                latitude,
+                longitude,
+                Constants.METRIC_UNIT,
+                Constants.APP_ID
+            )
+            weatherDataNetworkResult.postValue(getCall)
+        }
+    }
     fun getWeatherDataFromCoroutine(latitude: Double, longitude: Double, metricUnit: String, appId: String) {
 
         loading.value = true
