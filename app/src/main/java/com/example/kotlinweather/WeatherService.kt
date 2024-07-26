@@ -64,6 +64,7 @@ class WeatherService {
 
     fun getDataFlow(lat: Double, long: Double,units: String, appId: String): Flow<WeatherResponse> = flow{
         val response = api.getWeatherFlow(lat,long,units,appId)
+        print(response);
         emit(response)
     }
 }

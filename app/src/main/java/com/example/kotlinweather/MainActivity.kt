@@ -170,10 +170,10 @@ class MainActivity : AppCompatActivity() {
 
 
 //for coroutines
-            viewModel.getWeatherDataFromCoroutineTest(latitude,longitude,Constants.METRIC_UNIT,Constants.APP_ID)
+//            viewModel.getWeatherDataFromCoroutineTest(latitude,longitude,Constants.METRIC_UNIT,Constants.APP_ID)
 
 //for FLows
-//            viewModel.getWeatherFlow(latitude,longitude,Constants.METRIC_UNIT,Constants.APP_ID)
+            viewModel.getWeatherFlow(19.240330,73.130539,Constants.METRIC_UNIT,Constants.APP_ID)
 
 
 
