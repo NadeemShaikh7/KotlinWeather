@@ -24,7 +24,7 @@ import retrofit2.Response
 
 class WeatherViewModel(private val weatherService: WeatherService) : ViewModel() {
     lateinit var mFusedLocationProviderClient: FusedLocationProviderClient
-    val weatherData = MutableLiveData<WeatherResponse>()
+    val weatherData = MutableLiveData<WeatherResponse?>()
     val weatherDataNetworkResult = MutableLiveData<NetworkResult<WeatherResponse?>>()
     val liveweather: LiveData<NetworkResult<WeatherResponse?>>
         get() = weatherDataNetworkResult
